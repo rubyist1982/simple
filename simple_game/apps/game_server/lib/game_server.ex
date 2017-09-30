@@ -1,18 +1,10 @@
 defmodule GameServer do
-  @moduledoc """
-  Documentation for GameServer.
-  """
-
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> GameServer.hello
-      :world
-
-  """
-  def hello do
-    :world
+  use Application
+  def start(_type, _args) do
+    children = [
+      {Registry, keys: :unique, name: PlayerRegistry},
+      PlayerSupervisor
+    ]
+    Supervisor.start_link(children, strategy: :one_for_one)
   end
 end
