@@ -2,6 +2,7 @@ defmodule SimpleTable do
 	
 	def init() do
 		%{
+			id: 0,
 			cards: SimplePoker.init_cards,
 			creator: nil,
 			seat_map: %{},
@@ -9,6 +10,12 @@ defmodule SimpleTable do
 		}
 	end
 
+	def set_id(table, id), do: put_in(table.id, id)
+	def get_id(table), do: table.id
+
+	def set_creator(table, player), do: put_in(table.creator, player)
+	def get_creator(table), do: table.creator
+	
 	def seat_count(table), do: table.seat_order |> Enum.count
 	def seat_order(table), do: table.seat_order
 

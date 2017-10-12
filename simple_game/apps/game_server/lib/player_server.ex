@@ -10,5 +10,13 @@ defmodule PlayerServer do
 	end
 
 	def register_name(%{} = player), do: register_name(player |> Player.get_id)
-	def register_name(id), do: {:via, Registry, {PlayerRegistry, id}}
-end
+	def register_name(id), do: {:via, Registry, {LocalRegistry, {Player, id}}}
+
+	def exist?(player) do
+		key = {Player, player |> Player.get_id}
+		case Registry.lookup(LocalRegistry, key) do
+			[{_pid, _}] -> true
+			[] -> false
+		end
+	end
+end 
