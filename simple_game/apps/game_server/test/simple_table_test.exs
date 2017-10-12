@@ -10,7 +10,7 @@ defmodule SimpleTableTest do
   		player1: create_player(1),
   		player2: create_player(2),
   		player3: create_player(3),
-  		player4: create_player(4)
+  		player4: create_player(4),
     }
   end
 
@@ -41,6 +41,5 @@ defmodule SimpleTableTest do
       assert 3 == SimpleTable.seat_count(table)
       assert ^new_expect_seat_order = SimpleTable.seat_order(table)
   end 
-
 
 end
