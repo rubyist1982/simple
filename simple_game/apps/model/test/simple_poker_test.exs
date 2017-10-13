@@ -133,4 +133,10 @@ defmodule SimplePokerTest do
     refute SimplePoker.win?(normal_8, normal_9)
   end
 
+  test "测试发牌" do
+    cards = [{1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {1, 6}]
+    assert {:ok, [{1,1} , {1,2}], [{1,3}, {1,4}, {1,5}, {1,6}] = left} = cards |> SimplePoker.init_deal
+    assert {:ok, {1,3}, _}  = left |> SimplePoker.deal
+  end
+
 end

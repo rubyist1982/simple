@@ -9,10 +9,8 @@ defmodule SimplePoker do
 	def shuffle(cards), do: cards |> Enum.shuffle
 
 	# 初始发牌
-	def init_deal(cards, seat_num) do
-		{cs, left} = cards |> Enum.split(seat_num * 2)
-		{:ok, Enum.chunk_every(cs, 2), left}
-	end
+    def init_deal([a, b| t] = _cards), do: {:ok, [a, b], t}
+	
 
 	# 补单张
     def deal([card| left]), do: {:ok, card, left} 
