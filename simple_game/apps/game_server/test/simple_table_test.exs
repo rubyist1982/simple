@@ -43,7 +43,7 @@ defmodule SimpleTableTest do
   end 
 
   test "开局：少于2个人的时候不能", %{table: table, player1: player1} do
-       assert {:error, ErrorMsg.player_not_enough} == table |> SimpleTable.add_seat |> SimpleTable.start(player1)
+       assert {:error, ErrorMsg.player_not_enough} == table |> SimpleTable.add_seat(player1) |> SimpleTable.start(player1)
   end
 
   test "开局：正在玩中不能", %{table: table, player1: player1} do
@@ -56,7 +56,7 @@ defmodule SimpleTableTest do
                      |> SimpleTable.add_seat(player2) 
       assert {:error, ErrorMsg.just_creator_can_start} == table |> SimpleTable.start(player2)
       assert {:ok, new_table} = table |> SimpleTable.start(player1)
-      assert table |> SimpleTable.is_playing?
+      assert new_table |> SimpleTable.is_playing?
   end
 
   test "解散：正在玩中不能", %{table: table, player1: player1} do
@@ -71,7 +71,7 @@ defmodule SimpleTableTest do
   end 
 
   test "加入：正在玩中不能（以后支持？）", %{table: table, player1: player1} do
-    assert {:error, ErrorMsg.can_not_join_new_player_when_playing} == table |> SimpleTable.set_playing |> SimpleTable.join(player1)
+    assert {:error, ErrorMsg.can_not_join_when_playing} == table |> SimpleTable.set_playing |> SimpleTable.join(player1)
   end
 
   test "加入：准备阶段可以", %{table: table, player1: player1} do
@@ -101,17 +101,21 @@ defmodule SimpleTableTest do
   end
 
   test "补牌: 非玩中不能", %{table: table, player1: player1} do
-     assert {:error, ErrorMsg.can_not_deal_when_not_playing} == table |> SimpleTable.deal_one(player1)
+     assert {:error, ErrorMsg.can_not_make_up_when_not_playing} == table |> SimpleTable.make_up(player1)
   end
 
   test "补牌: 已经翻牌不能", %{table: table, player1: player1} do
      seat = Seat.init(player1) |> Seat.open
-     assert {:error, ErrorMsg.can_not_make_up_when_open} == table |> SimpleTable.update_seat(seat) |> SimpleTable.make_up(player1)
+     assert {:error, ErrorMsg.can_not_make_up_when_open} == table |> SimpleTable.set_playing
+                                                                 |> SimpleTable.update_seat(seat) 
+                                                                 |> SimpleTable.make_up(player1)
   end
 
   test "补牌: 已经三张了不能再补", %{table: table, player1: player1} do
      seat = Seat.init(player1) |> Seat.add_cards([1, 2, 3]) 
-     assert {:error, ErrorMsg.can_not_make_up_when_full} == table |> SimpleTable.update_seat(seat) |> SimpleTable.make_up(player1)
+     assert {:error, ErrorMsg.can_not_make_up_when_full} == table |> SimpleTable.set_playing
+                                                                  |> SimpleTable.update_seat(seat) 
+                                                                  |> SimpleTable.make_up(player1)
   end
 
   test "翻牌: 不是天公牌不能", %{table: table, player1: player1} do

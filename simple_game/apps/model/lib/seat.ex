@@ -30,6 +30,8 @@ defmodule Seat do
 	def is_open?(seat), do: seat.is_open
 	def reset_is_open(seat), do: put_in(seat.is_open, false)
 
+	def is_full?(seat), do: length(seat.cards) == 3
+
 	def reset(seat) do
 		seat |> reset_score |> reset_cards |> reset_is_open
 	end

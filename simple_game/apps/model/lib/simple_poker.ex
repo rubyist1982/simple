@@ -94,7 +94,7 @@ defmodule SimplePoker do
     end
 
     def is_flush_straight?(cards), do: is_flush?(cards) and is_straight?(cards)
-
+    def can_be_tian_gong?(cards), do: normal_power(cards) in @tian_gong
 end
 
 # SimplePoker.init_cards |> SimplePoker.shuffle |> IO.inspect
