@@ -6,6 +6,7 @@ defmodule ErrorMsg do
 		just_creator_can_start: "just_creator_can_start",
 		just_creator_can_dismiss: "just_creator_can_dismiss",
 		can_not_join_when_playing: "can_not_join_when_playing",
+		player_num_limit: "player_num_limit",
 		repeated_join: "repeated_join",
 		can_not_quit_when_playing: "can_not_quit_when_playing",
 		can_not_quit_when_creator: "can_not_quit_when_creator",

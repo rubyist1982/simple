@@ -6,6 +6,7 @@ defmodule Seat do
 			score: 0,
 			cards: [],
 			is_open: false
+
 		}
 	end
 

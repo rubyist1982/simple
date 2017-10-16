@@ -1,8 +1,7 @@
 defmodule SimpleTableTest do
   use ExUnit.Case
   doctest SimpleTable
-  
-  def create_player(id), do: Player.init |> Player.set_id(id)
+  import TestPlayer 
 
   setup do
     %{
@@ -42,6 +41,7 @@ defmodule SimpleTableTest do
       assert ^new_expect_seat_order = SimpleTable.seat_order(table)
   end 
 
+
   test "开局：少于2个人的时候不能", %{table: table, player1: player1} do
        assert {:error, ErrorMsg.player_not_enough} == table |> SimpleTable.add_seat(player1) |> SimpleTable.start(player1)
   end
@@ -69,6 +69,10 @@ defmodule SimpleTableTest do
      assert {:ok, new_table} = table |> SimpleTable.dismiss(player1) 
      assert new_table |> SimpleTable.dismiss_state?
   end 
+
+  test "加入： 人数限制不能", %{table: table, player1: player1} do
+    assert {:error, ErrorMsg.player_num_limit} == table |> SimpleTable.set_limit(0)  |> SimpleTable.join(player1)
+  end
 
   test "加入：正在玩中不能（以后支持？）", %{table: table, player1: player1} do
     assert {:error, ErrorMsg.can_not_join_when_playing} == table |> SimpleTable.open_state |> SimpleTable.join(player1)

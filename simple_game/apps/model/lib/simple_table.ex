@@ -5,6 +5,9 @@ defmodule SimpleTable do
 	@state_settle :state_settle # 结算
 	@state_dismiss :dismiss    # 解散
 
+	@limit 17   # 最多17人玩
+	@timeout  10 # 翻牌、补牌超时, 10s
+
 	def init() do
 		%{
 			id: 0,
@@ -12,9 +15,12 @@ defmodule SimpleTable do
 			creator: nil,
 			seat_map: %{},
 			seat_order: [],
-			state: @state_ready
+			state: @state_ready,
+			limit: @limit
 		}
 	end
+
+	def set_limit(table, limit), do: put_in(table.limit, limit)
 
 	def ready_state(table), do: put_in(table.state, @state_ready)
 	def ready_state?(table), do: table.state == @state_ready
@@ -65,9 +71,11 @@ defmodule SimpleTable do
 	def seat_count(table), do: table.seat_order |> Enum.count
 	def seat_order(table), do: table.seat_order
 
+
 	def find_seat(table, %{} = player), do: find_seat(table, player |> Player.get_id)
 	def find_seat(table, player_id), do: table.seat_map[player_id]
 
+	def get_seats(table), do: table.seat_map |> Enum.to_list
 
 	def add_seat(table, player) do
 		seat = Seat.init(player)
@@ -128,9 +136,12 @@ defmodule SimpleTable do
 		end
 	end
 
+	def reach_limit?(table), do: seat_count(table) >= table.limit
+
 	def join(table, player) do
 		cond do
 			not ready_state?(table) -> {:error, ErrorMsg.can_not_join_when_playing}
+			reach_limit?(table) -> {:error, ErrorMsg.player_num_limit}
 			find_seat(table, player) -> {:error, ErrorMsg.repeated_join}
 			true -> 
 				table = table |> add_seat(player)
