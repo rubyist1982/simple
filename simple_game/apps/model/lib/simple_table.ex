@@ -1,7 +1,10 @@
 defmodule SimpleTable do
-	@state_ready  :ready
-	@state_playing :playing
-	@state_dismiss :dismiss
+	@state_ready  :state_ready # 准备
+	@state_open :state_open # 天公翻牌
+	@state_makeup :state_makeup # 补牌
+	@state_settle :state_settle # 结算
+	@state_dismiss :dismiss    # 解散
+
 	def init() do
 		%{
 			id: 0,
@@ -13,13 +16,20 @@ defmodule SimpleTable do
 		}
 	end
 
-	def is_playing?(table), do: table.state == @state_playing
-	def is_dismiss?(table), do: table.state == @state_dismiss
-	def is_ready?(table), do: table.state == @state_ready
+	def ready_state(table), do: put_in(table.state, @state_ready)
+	def ready_state?(table), do: table.state == @state_ready
 
-	def set_playing(table), do: put_in(table.state, @state_playing)
-	def set_ready(table), do: put_in(table.state, @state_ready)
-	def set_dismiss(table), do: put_in(table.state, @state_dismiss)
+	def open_state(table), do: put_in(table.state, @state_open)
+	def open_state?(table), do: table.state == @state_open
+
+	def makeup_state(table), do: put_in(table.state, @state_makeup)
+	def makeup_state?(table), do: table.state == @state_makeup
+
+	def settle_state(table), do: put_in(table.state, @state_settle)
+	def settle_state?(table), do: table.state == @state_settle
+
+	def dismiss_state(table), do: put_in(table.state, @state_dismiss)
+	def dismiss_state?(table), do: table.state == @state_dismiss
 
 
 	def set_cards(table, cards), do: put_in(table.cards, cards)
@@ -78,18 +88,18 @@ defmodule SimpleTable do
 
 	def start(table, player) do
 		cond do
-			is_playing?(table) -> {:error, ErrorMsg.can_not_start_when_playing}
+			not ready_state?(table) -> {:error, ErrorMsg.not_ready_state}
 			seat_count(table) < 2 -> {:error, ErrorMsg.player_not_enough}
 			not is_creator?(table, player) -> {:error, ErrorMsg.just_creator_can_start}
 			true ->
-				table = table |> set_playing
+				table = table |> open_state
 				{:ok, table}
 		end
 	end
 
 	def quit(table, player) do
 		cond do
-			is_playing?(table) -> {:error, ErrorMsg.can_not_quit_when_playing}
+			not ready_state?(table) -> {:error, ErrorMsg.can_not_quit_when_playing}
 			is_creator?(table, player) -> {:error, ErrorMsg.can_not_quit_when_creator}
 			true ->
 				table = table |> remove_seat(player)
@@ -99,17 +109,17 @@ defmodule SimpleTable do
 	
 	def dismiss(table, player) do
 		cond do
-			is_playing?(table) -> {:error, ErrorMsg.can_not_dismiss_when_playing}
+			not ready_state?(table) -> {:error, ErrorMsg.can_not_dismiss_when_playing}
 			not is_creator?(table, player) -> {:error, ErrorMsg.just_creator_can_dismiss}
 			true ->
-				table = table |> set_dismiss
+				table = table |> dismiss_state
 				{:ok, table}
 		end
 	end
 
 	def make_up(table, player) do
 		cond do
-			is_ready?(table) -> {:error, ErrorMsg.can_not_make_up_when_not_playing}
+			not makeup_state?(table) -> {:error, ErrorMsg.not_makeup_state}
 			find_seat(table, player) |> Seat.is_open? -> {:error, ErrorMsg.can_not_make_up_when_open}
 			find_seat(table, player) |> Seat.is_full? -> {:error, ErrorMsg.can_not_make_up_when_full}
 			true ->
@@ -120,7 +130,7 @@ defmodule SimpleTable do
 
 	def join(table, player) do
 		cond do
-			is_playing?(table) -> {:error, ErrorMsg.can_not_join_when_playing}
+			not ready_state?(table) -> {:error, ErrorMsg.can_not_join_when_playing}
 			find_seat(table, player) -> {:error, ErrorMsg.repeated_join}
 			true -> 
 				table = table |> add_seat(player)
@@ -130,7 +140,7 @@ defmodule SimpleTable do
 
 	def open(table, player) do
 		cond do
-			is_ready?(table) -> {:error, ErrorMsg.cant_not_open_when_ready}
+			not open_state?(table) -> {:error, ErrorMsg.not_open_state}
 			find_seat(table, player) |> Seat.is_open? -> {:error, ErrorMsg.repeated_open}
 			not (find_seat(table, player) |> Seat.get_cards |> SimplePoker.can_be_tian_gong?) -> {:error, ErrorMsg.just_tian_gong_can_open}
 			true ->
