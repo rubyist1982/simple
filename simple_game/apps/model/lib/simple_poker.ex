@@ -9,11 +9,8 @@ defmodule SimplePoker do
 	def shuffle(cards), do: cards |> Enum.shuffle
 
 	# 初始发牌
-    def init_deal([a, b| t] = _cards), do: {:ok, [a, b], t}
-	
-
-	# 补单张
-    def deal([card| left]), do: {:ok, card, left} 
+    def deal([a, b| t] = _cards, 2), do: {:ok, [a, b], t}
+    def deal([card| left], 1), do: {:ok, card, left} 
 
     def single_point({_, p}) when p < @ten, do: p
     def single_point(_), do: @ten

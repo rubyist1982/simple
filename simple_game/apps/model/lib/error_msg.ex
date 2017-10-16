@@ -13,7 +13,8 @@ defmodule ErrorMsg do
 		can_not_make_up_when_open: "can_not_make_up_when_open",
 		can_not_make_up_when_full: "can_not_make_up_when_full",
 		just_tian_gong_can_open: "just_tian_gong_can_open",
-		repeated_open: "repeated_open"
+		repeated_open: "repeated_open",
+		cant_not_open_when_ready: "cant_not_open_when_ready"
 	}
 
 	for {tag, text} <- @msgs do

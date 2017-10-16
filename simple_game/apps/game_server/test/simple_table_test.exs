@@ -90,12 +90,20 @@ defmodule SimpleTableTest do
     assert {:error, ErrorMsg.can_not_quit_when_creator} == table |> SimpleTable.set_creator(player1) |> SimpleTable.quit(player1)
   end
 
+  test "退出： 非玩中， 非房主可以退出", %{table: table, player1: player1, player2: player2} do
+    assert {:ok, new_table} = table |> SimpleTable.set_creator(player1) 
+                                    |> SimpleTable.add_seat(player1) 
+                                    |> SimpleTable.add_seat(player2) 
+                                    |> SimpleTable.quit(player2)
+    assert 1 = new_table |> SimpleTable.seat_count
+  end
+
   test "测试发牌", %{table: table, player1: player1, player2: player2} do
       cards = [{1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {1, 6}]
       table = table |> SimpleTable.set_cards(cards)
                     |> SimpleTable.add_seat(player1)
                     |> SimpleTable.add_seat(player2)
-                    |> SimpleTable.init_deal
+                    |> SimpleTable.deal
       assert [{1, 1}, {1, 2}] == table |> SimpleTable.find_seat(player1) |> Seat.get_cards
       assert [{1, 3}, {1, 4}] == table |> SimpleTable.find_seat(player2) |> Seat.get_cards
   end
@@ -118,14 +126,38 @@ defmodule SimpleTableTest do
                                                                   |> SimpleTable.make_up(player1)
   end
 
+  test "补牌: 正在游戏中，未翻牌，尚未补牌则可补牌", %{table: table, player1: player1} do
+     seat = Seat.init(player1) |> Seat.add_cards([1,2])
+     assert {:ok, new_table} = table |> SimpleTable.add_seat(player1)
+                                      |> SimpleTable.set_playing
+                                      |> SimpleTable.update_seat(seat)
+                                      |> SimpleTable.set_cards([3,4])
+                                      |> SimpleTable.make_up(player1)
+     assert Seat.is_full?(SimpleTable.find_seat(new_table, player1))
+  end
+
+  test "翻牌： 非游戏中，不能翻牌", %{table: table, player1: player1} do
+     assert {:error, ErrorMsg.cant_not_open_when_ready} == table |> SimpleTable.open(player1)
+  end
+
   test "翻牌: 不是天公牌不能", %{table: table, player1: player1} do
     seat = Seat.init(player1) |> Seat.add_cards([{1, 2}, {1, 5}])
-    assert {:error, ErrorMsg.just_tian_gong_can_open} == table |> SimpleTable.update_seat(seat) |> SimpleTable.open(player1)
+    assert {:error, ErrorMsg.just_tian_gong_can_open} == table |> SimpleTable.set_playing 
+                                                              |> SimpleTable.update_seat(seat) 
+                                                              |> SimpleTable.open(player1)
   end
 
   test "翻牌: 已经翻过了不能", %{table: table, player1: player1} do
     seat = Seat.init(player1) |> Seat.open
-    assert {:error, ErrorMsg.repeated_open} == table |> SimpleTable.update_seat(seat) |> SimpleTable.open(player1)
+    assert {:error, ErrorMsg.repeated_open} == table |> SimpleTable.set_playing |> SimpleTable.update_seat(seat) |> SimpleTable.open(player1)
+  end
+
+  test "翻牌: 游戏中，天公翻牌", %{table: table, player1: player1} do
+     seat = Seat.init(player1) |> Seat.add_cards([{1, 2}, {1, 7}])
+     assert {:ok, new_table} = table |> SimpleTable.add_seat(player1) 
+                                      |> SimpleTable.update_seat(seat)
+                                      |> SimpleTable.set_playing |> SimpleTable.open(player1)    
+     assert Seat.is_open?(SimpleTable.find_seat(new_table, player1))
   end
 
 end

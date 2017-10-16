@@ -135,8 +135,8 @@ defmodule SimplePokerTest do
 
   test "测试发牌" do
     cards = [{1, 1}, {1, 2}, {1, 3}, {1, 4}, {1, 5}, {1, 6}]
-    assert {:ok, [{1,1} , {1,2}], [{1,3}, {1,4}, {1,5}, {1,6}] = left} = cards |> SimplePoker.init_deal
-    assert {:ok, {1,3}, _}  = left |> SimplePoker.deal
+    assert {:ok, [{1,1} , {1,2}], [{1,3}, {1,4}, {1,5}, {1,6}] = left} = cards |> SimplePoker.deal(2)
+    assert {:ok, {1,3}, _}  = left |> SimplePoker.deal(1)
   end
 
 end

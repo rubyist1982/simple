@@ -25,21 +25,26 @@ defmodule SimpleTable do
 	def set_cards(table, cards), do: put_in(table.cards, cards)
 	def get_cards(table), do: table.cards
 
-	def init_deal(table) do
+	def deal(table) do
 		table.seat_order
 		|> Enum.map(&(find_seat(table, &1)))
 		|> Enum.reduce(table, 
 			fn seat, new_table ->
-				new_table |> init_deal_one(seat)
+				new_table |> deal(seat, 2)
 			end)
 	end
 
-	def init_deal_one(table, seat) do
-		{:ok, cards, left} = SimplePoker.init_deal(table.cards)
+	def deal_player(table, player, num) do
+		seat = find_seat(table, player)
+		deal(table, seat, num)
+	end
+	def deal(table, seat, num) do
+		{:ok, cards, left} = SimplePoker.deal(table.cards, num)
 		seat = seat |> Seat.add_cards(cards)
 		table |> update_seat(seat)
 			  |> set_cards(left)
 	end
+
 
 	def set_id(table, id), do: put_in(table.id, id)
 	def get_id(table), do: table.id
@@ -86,6 +91,9 @@ defmodule SimpleTable do
 		cond do
 			is_playing?(table) -> {:error, ErrorMsg.can_not_quit_when_playing}
 			is_creator?(table, player) -> {:error, ErrorMsg.can_not_quit_when_creator}
+			true ->
+				table = table |> remove_seat(player)
+				{:ok, table}
 		end
 	end
 	
@@ -104,6 +112,9 @@ defmodule SimpleTable do
 			is_ready?(table) -> {:error, ErrorMsg.can_not_make_up_when_not_playing}
 			find_seat(table, player) |> Seat.is_open? -> {:error, ErrorMsg.can_not_make_up_when_open}
 			find_seat(table, player) |> Seat.is_full? -> {:error, ErrorMsg.can_not_make_up_when_full}
+			true ->
+				table = table |> deal_player(player, 1)
+				{:ok, table}
 		end
 	end
 
@@ -119,8 +130,13 @@ defmodule SimpleTable do
 
 	def open(table, player) do
 		cond do
+			is_ready?(table) -> {:error, ErrorMsg.cant_not_open_when_ready}
 			find_seat(table, player) |> Seat.is_open? -> {:error, ErrorMsg.repeated_open}
 			not (find_seat(table, player) |> Seat.get_cards |> SimplePoker.can_be_tian_gong?) -> {:error, ErrorMsg.just_tian_gong_can_open}
+			true ->
+				seat = find_seat(table, player) |> Seat.open
+				table = table |> update_seat(seat)
+				{:ok, table}
 		end
 	end
 
