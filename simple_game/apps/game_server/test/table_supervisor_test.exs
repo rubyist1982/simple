@@ -3,8 +3,8 @@ defmodule TableSupervisorTest do
 	doctest PlayerSupervisor
 
 	setup do
-		Application.stop(GameServer)
-		Application.start(GameServer)
+		Application.stop(:game_server)
+		Application.start(:game_server)
 		%{}
 	end
 
@@ -16,4 +16,5 @@ defmodule TableSupervisorTest do
 		assert TableServer.exist?(table1)
 		assert TableServer.exist?(table2)
 	end
+
 end

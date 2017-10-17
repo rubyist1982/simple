@@ -15,7 +15,8 @@ defmodule ErrorMsg do
 		can_not_make_up_when_full: "can_not_make_up_when_full",
 		just_tian_gong_can_open: "just_tian_gong_can_open",
 		repeated_open: "repeated_open",
-		not_open_state: "not_open_state"
+		not_open_state: "not_open_state",
+		not_in_table: "not_in_table"
 	}
 
 	for {tag, text} <- @msgs do

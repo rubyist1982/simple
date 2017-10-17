@@ -25,99 +25,99 @@ defmodule TableServer do
 				|> SimpleTable.set_id(player |> Player.get_id)
 				|> SimpleTable.set_creator(player)
 				|> SimpleTable.add_seat(player)
-		TableSupervisor.start_table(table)
+		{:ok, _pid} = TableSupervisor.start_table(table)
+		{:ok, table}
 	end
 
-	def join(table, player), do: GenServer.cast(table, {:join, player: player})
+	def call(table, request, timeout \\ 1000), do: GenServer.call(table, request, timeout)
 
-	def quit(table, player), do: GenServer.cast(table, {:quit, player: player})
+	def join(table, player), do: call(table, {:join, player: player})
 
-	def dismiss(table, player), do: GenServer.cast(table, {:dismiss, player: player})
+	def quit(table, player), do: call(table, {:quit, player: player})
 
-	def start(table, player), do: GenServer.cast(table, {:start, player: player})
+	def dismiss(table, player), do: call(table, {:dismiss, player: player})
 
-	def open(table, player), do: GenServer.cast(table, {:open, player: player})
+	def start(table, player), do: call(table, {:start, player: player})
 
-	def makeup(table, player), do: GenServer.cast(table, {:makeup, player: player})
+	def open(table, player), do: call(table, {:open, player: player})
 
-    def handle_cast(request, table) do
-	    {:ok, table} = inner_handle_cast(request, table) 
-    	{:noreply, table}
+	def makeup(table, player), do: call(table, {:makeup, player: player})
+
+    def handle_call(request, from, table) do
+	    case inner_handle_call(request, from, table) do
+	    	{:error, _} = error ->
+	    		{:reply, error, table}
+	    	{result, new_table} ->
+	    		{:reply, result, new_table}
+	    end
     end
 
 
 
-    def send_error(_player, _error) do
-    
-    end
+    def ok(table), do: {:ok, table}
+    def ok(result, table), do: {{:ok, result}, table}
 
-  
 
-    def inner_handle_cast({:join, player: player}, table) do 
+    def inner_handle_call({:join, player: player}, _from, table) do 
     	with {:ok, table}  <- table |> SimpleTable.join(player)
     	do
     		seat = SimpleTable.find_seat(table, player)
     		broadcast_join(table, seat)
+    		ok(table, table)
     	else
-    		{:error, error} ->
-    			send_error(player, error)
+    		error -> error
     	end
-    	{:ok, table}
     end
 
-    def inner_handle_cast({:quit, player: player}, table) do
+    def inner_handle_call({:quit, player: player}, _from, table) do
     	with {:ok, table} <- table |> SimpleTable.quit(player)
     	do
     		broadcast_quit(table, player)
+    		ok(table)
     	else
-    		{:error, error} ->
-    			send_error(player, error)
+    		error -> error
     	end
-    	{:ok, table}
    	end
 
-    def inner_handle_cast({:dismiss, player: player}, table) do
+    def inner_handle_call({:dismiss, player: player}, _from, table) do
     	with {:ok, table} <- table |> SimpleTable.dismiss(player)
     	do
     		broadcast_dismiss(table)
+    		ok(table)
 		else
-			{:error, error} ->
-				send_error(player, error)
+			error -> error
     	end
-    	{:ok, table}
     end
 
-    def inner_handle_cast({:start, player: player}, table) do
-    	with {:ok, table} <-	table |> SimpleTable.start(player)
+    def inner_handle_call({:start, player: player}, _from, table) do
+    	with {:ok, table} <- table |> SimpleTable.start(player)
 		do
 			broadcast_start(table)
+			ok(table)
 		else
-			{:error, error} ->
-				send_error(player, error)
+			error -> error
 		end
-		{:ok, table}
     end
 
-    def inner_handle_cast({:open, player: player}, table) do
+    def inner_handle_call({:open, player: player}, _from, table) do
     	with {:ok, table} <- table |> SimpleTable.open(player)
     	do
-    		send_open(table, player)
+    		broadcast_open(table, player)
+    		ok(table)
     	else
-    		{:error, error} ->
-    			send_error(player, error)
+    		error -> error
     	end
     	{:ok, table}
     end
 
-    def inner_handle_cast({:makeup, player: player}, table) do
+    def inner_handle_call({:makeup, player: player}, _from, table) do
     	with {:ok, table} <- table |> SimpleTable.make_up(player)
     	do
-    		send_makeup(table, player)
+    		broadcast_makeup(table, player)
+    		ok(table)
     	else
-    		{:error, error} ->
-    			send_error(player, error)
+    		error -> error
     	end
-    	{:ok, table}
     end
 
     def broadcast_join(_table, _seat) do
@@ -136,11 +136,11 @@ defmodule TableServer do
     	
     end
 
-    def send_open(_table, _player) do
+    def broadcast_open(_table, _player) do
     	
     end
 
-    def send_makeup(_table, _player) do
+    def broadcast_makeup(_table, _player) do
     	
     end
 

@@ -71,7 +71,9 @@ defmodule SimpleTable do
 	def seat_count(table), do: table.seat_order |> Enum.count
 	def seat_order(table), do: table.seat_order
 
-
+	def in_table?(table, player) do
+		if find_seat(table, player), do: true , else: false
+	end
 	def find_seat(table, %{} = player), do: find_seat(table, player |> Player.get_id)
 	def find_seat(table, player_id), do: table.seat_map[player_id]
 
@@ -100,7 +102,10 @@ defmodule SimpleTable do
 			seat_count(table) < 2 -> {:error, ErrorMsg.player_not_enough}
 			not is_creator?(table, player) -> {:error, ErrorMsg.just_creator_can_start}
 			true ->
+				cards = SimplePoker.init_cards |> SimplePoker.shuffle
 				table = table |> open_state
+							  |> set_cards(cards)
+							  |> deal
 				{:ok, table}
 		end
 	end
@@ -109,6 +114,7 @@ defmodule SimpleTable do
 		cond do
 			not ready_state?(table) -> {:error, ErrorMsg.can_not_quit_when_playing}
 			is_creator?(table, player) -> {:error, ErrorMsg.can_not_quit_when_creator}
+			not in_table?(table, player) -> {:error, ErrorMsg.not_in_table}	
 			true ->
 				table = table |> remove_seat(player)
 				{:ok, table}

@@ -3,8 +3,8 @@ defmodule PlayerSupervisorTest do
 	doctest PlayerSupervisor
 
 	setup do
-		Application.stop(GameServer)
-		Application.start(GameServer)
+		Application.stop(:game_server)
+		Application.start(:game_server)
 		%{}
 	end
 
