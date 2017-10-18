@@ -51,7 +51,7 @@ defmodule SimpleTable do
 	end
 
 	def deal_player(table, player, num) do
-		seat = find_seat(table, player)
+		seat = find_seat(table, player) |> Seat.make_up
 		deal(table, seat, num)
 	end
 	def deal(table, seat, num) do
@@ -77,7 +77,7 @@ defmodule SimpleTable do
 	def find_seat(table, %{} = player), do: find_seat(table, player |> Player.get_id)
 	def find_seat(table, player_id), do: table.seat_map[player_id]
 
-	def get_seats(table), do: table.seat_map |> Enum.to_list
+	def get_seats(table), do: table.seat_map |> Enum.map(fn {_, v} -> v end)
 
 	def add_seat(table, player) do
 		seat = Seat.init(player)
@@ -135,12 +135,45 @@ defmodule SimpleTable do
 		cond do
 			not makeup_state?(table) -> {:error, ErrorMsg.not_makeup_state}
 			find_seat(table, player) |> Seat.is_open? -> {:error, ErrorMsg.can_not_make_up_when_open}
-			find_seat(table, player) |> Seat.is_full? -> {:error, ErrorMsg.can_not_make_up_when_full}
+			find_seat(table, player) |> Seat.makeup_op_done? -> {:error, ErrorMsg.makeup_op_done}
 			true ->
-				table = table |> deal_player(player, 1)
+				table = table |> deal_player(player, 1) 
+							  |> try_goto_settle
 				{:ok, table}
 		end
 	end
+
+	def not_make_up(table, player) do
+		cond do
+			not makeup_state?(table) -> {:error, ErrorMsg.not_makeup_state}
+			find_seat(table, player) |> Seat.is_open? -> {:error, ErrorMsg.cant_not_make_up_when_open}
+			find_seat(table, player) |> Seat.makeup_op_done? ->{:error, ErrorMsg.makeup_op_done}
+			true ->
+				seat = find_seat(table, player) |> Seat.not_make_up
+				table = table |> update_seat(seat)
+							  |> try_goto_settle
+				{:ok, table}
+		end
+	end
+
+	def try_goto_settle(table) do
+		seats = table |> get_seats 
+		all_done = Enum.all?(seats, 
+							fn seat -> 
+								Seat.makeup_op_done?(seat)
+							end)
+		if all_done, do: table |> settle_state, else: table
+	end
+
+    def try_goto_makeup(table) do
+		seats = table |> get_seats 
+		all_done = Enum.all?(seats, 
+							fn seat -> 
+								Seat.open_op_done?(seat)
+							end)
+		if all_done, do: table |> makeup_state, else: table
+    	
+    end
 
 	def reach_limit?(table), do: seat_count(table) >= table.limit
 
@@ -158,11 +191,24 @@ defmodule SimpleTable do
 	def open(table, player) do
 		cond do
 			not open_state?(table) -> {:error, ErrorMsg.not_open_state}
-			find_seat(table, player) |> Seat.is_open? -> {:error, ErrorMsg.repeated_open}
+			find_seat(table, player) |> Seat.open_op_done? -> {:error, ErrorMsg.open_op_done}
 			not (find_seat(table, player) |> Seat.get_cards |> SimplePoker.can_be_tian_gong?) -> {:error, ErrorMsg.just_tian_gong_can_open}
 			true ->
 				seat = find_seat(table, player) |> Seat.open
 				table = table |> update_seat(seat)
+							  |> try_goto_makeup
+				{:ok, table}
+		end
+	end
+
+	def not_open(table, player) do
+		cond do
+			not open_state?(table) -> {:error, ErrorMsg.not_open_state}
+			find_seat(table, player) |> Seat.open_op_done? -> {:error, ErrorMsg.open_op_done}
+			true ->
+				seat = find_seat(table, player) |> Seat.not_open
+				table = table |> update_seat(seat)
+							  |> try_goto_makeup
 				{:ok, table}
 		end
 	end

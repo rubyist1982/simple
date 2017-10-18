@@ -128,29 +128,31 @@ defmodule SimpleTableTest do
 
     test "已经翻牌操作了不能", %{table: table, player1: player1} do
        seat = Seat.init(player1) |> Seat.open
+       assert {:error, ErrorMsg.can_not_make_up_when_open} == table |> SimpleTable.update_seat(seat)
+                                                        |> SimpleTable.makeup_state
+                                                        |> SimpleTable.make_up(player1)
+    end
+
+    test "已经补牌操作了不能", %{table: table, player1: player1} do
+       seat = Seat.init(player1) |> Seat.make_up
        assert {:error, ErrorMsg.makeup_op_done} == table |> SimpleTable.update_seat(seat)
                                                         |> SimpleTable.makeup_state
-                                                        |> SimpleTable.makeup(player1)
+                                                        |> SimpleTable.make_up(player1)
+      
     end
 
 
 
-    test "已经三张了不能再补", %{table: table, player1: player1} do
-       seat = Seat.init(player1) |> Seat.add_cards([1, 2, 3]) 
-       assert {:error, ErrorMsg.can_not_make_up_when_full} == table |> SimpleTable.makeup_state
-                                                                    |> SimpleTable.update_seat(seat) 
-                                                                    |> SimpleTable.make_up(player1)
-    end
 
 
     test "正在游戏中，未翻牌操作，尚未补牌则可补牌", %{table: table, player1: player1} do
        seat = Seat.init(player1) |> Seat.add_cards([1,2])
        assert {:ok, new_table} = table |> SimpleTable.add_seat(player1)
-                                        |> SimpleTable.makeup_state
                                         |> SimpleTable.update_seat(seat)
+                                        |> SimpleTable.makeup_state
                                         |> SimpleTable.set_cards([3,4])
                                         |> SimpleTable.make_up(player1)
-       assert Seat.is_full?(SimpleTable.find_seat(new_table, player1))
+      assert new_table |> SimpleTable.find_seat(player1) |> Seat.is_makeup?
     end
 
     test "所有人补牌操作了，进入结算阶段", %{table: table, player1: player1} do
@@ -205,6 +207,7 @@ defmodule SimpleTableTest do
                                         |> SimpleTable.update_seat(seat)
                                         |> SimpleTable.open_state 
                                         |> SimpleTable.open(player1)    
+      seat = SimpleTable.find_seat(new_table, player1)
       assert Seat.is_open?(seat)
       assert Seat.open_op_done?(seat)
     end

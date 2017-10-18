@@ -5,7 +5,8 @@ defmodule Seat do
 			player: player,
 			score: 0,
 			cards: [],
-			is_open: false
+			open_op: nil,    # nil 标识未操作， true 翻牌， false 补牌
+			makeup_op: nil 
 
 		}
 	end
@@ -27,13 +28,19 @@ defmodule Seat do
 	def add_cards(seat, a_card), do: update_in(seat.cards, fn old -> old ++ [a_card] end)
 	def reset_cards(seat), do: put_in(seat.cards, [])
 
-	def open(seat), do: put_in(seat.is_open, true)
-	def is_open?(seat), do: seat.is_open
-	def reset_is_open(seat), do: put_in(seat.is_open, false)
+	def open(seat), do: put_in(seat.open_op, true)
+	def not_open(seat), do: put_in(seat.open_op, false)
+	def is_open?(seat), do: seat.open_op 
+	def open_op_done?(seat), do: seat.open_op != nil
+	def reset_open_op(seat), do: put_in(seat.open_op, nil)
 
-	def is_full?(seat), do: length(seat.cards) == 3
+	def is_makeup?(seat), do: seat.makeup_op
+	def make_up(seat), do: put_in(seat.makeup_op, true)
+	def not_make_up(seat), do: put_in(seat.makeup_op, false)
+	def reset_makeup_op(seat), do: put_in(seat.makeup_op, nil)
+	def makeup_op_done?(seat), do: seat.makeup_op != nil
 
 	def reset(seat) do
-		seat |> reset_score |> reset_cards |> reset_is_open
+		seat |> reset_score |> reset_cards |> reset_open_op |> reset_makeup_op
 	end
 end

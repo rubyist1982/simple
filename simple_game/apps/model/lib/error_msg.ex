@@ -16,7 +16,10 @@ defmodule ErrorMsg do
 		just_tian_gong_can_open: "just_tian_gong_can_open",
 		repeated_open: "repeated_open",
 		not_open_state: "not_open_state",
-		not_in_table: "not_in_table"
+		not_in_table: "not_in_table",
+		makeup_op_done: "makeup_op_done",
+		open_op_done: "open_op_done",
+		cant_not_make_up_when_open: "cant_not_make_up_when_open"
 	}
 
 	for {tag, text} <- @msgs do
