@@ -10,15 +10,23 @@ defmodule TableServer do
 	end
 
 	def register_name(%{} = table), do: register_name(table |> SimpleTable.get_id)
-	def register_name(id), do: {:via, Registry, {LocalRegistry, {Table, id}}}
+	def register_name(id), do: {:via, Registry, {LocalRegistry, {SimpleTable, id}}}
 
-	def exist?(table) do
-		key = {Table, table |> SimpleTable.get_id}
-		case Registry.lookup(LocalRegistry, key) do
-			[{_pid, _}] -> true
-			[] -> false
-		end
-	end
+    def whereis(%{} = table), do: whereis(table |> SimpleTable.get_id)
+    def whereis(table_id) do
+        key = {SimpleTable, table_id}
+        case Registry.lookup(LocalRegistry, key) do
+            [{pid, _}] -> pid
+            [] -> :undefined
+        end
+    end
+        
+    def exist?(table) do
+        case whereis(table) do
+            :undefined -> false
+            _ -> true
+        end
+    end
 
 	def create(player) do
 		table = SimpleTable.init 
@@ -41,7 +49,10 @@ defmodule TableServer do
 
 	def open(table, player), do: call(table, {:open, player: player})
 
+    def not_open(table, player), do: call(table, {:not_open, player: player})
+
 	def makeup(table, player), do: call(table, {:makeup, player: player})
+    def not_makeup(table, player), do: call(table, {:not_makeup, player: player})
 
     def handle_call(request, from, table) do
 	    case inner_handle_call(request, from, table) do
@@ -110,6 +121,16 @@ defmodule TableServer do
     	{:ok, table}
     end
 
+    def inner_handle_call({:not_open, player: player}, _from, table) do
+        with {:ok, table} <- table |> SimpleTable.not_open(player)
+        do
+            broadcast_not_open(table, player)
+            ok(table)
+        else
+            error -> error
+        end
+    end
+
     def inner_handle_call({:makeup, player: player}, _from, table) do
     	with {:ok, table} <- table |> SimpleTable.make_up(player)
     	do
@@ -118,6 +139,16 @@ defmodule TableServer do
     	else
     		error -> error
     	end
+    end
+
+    def inner_handle_call({:not_makeup, player: player}, _from, table) do
+        with {:ok, table} <- table |> SimpleTable.not_make_up(player)
+        do
+            broadcast_not_makeup(table, player)
+            ok(table)
+        else
+            error -> error
+        end  
     end
 
     def broadcast_join(_table, _seat) do
@@ -140,8 +171,16 @@ defmodule TableServer do
     	
     end
 
+    def broadcast_not_open(_table, _player) do
+        
+    end
+
     def broadcast_makeup(_table, _player) do
     	
+    end
+
+    def broadcast_not_makeup(_table, _player) do
+        
     end
 
 end

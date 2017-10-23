@@ -12,11 +12,19 @@ defmodule PlayerServer do
 	def register_name(%{} = player), do: register_name(player |> Player.get_id)
 	def register_name(id), do: {:via, Registry, {LocalRegistry, {Player, id}}}
 
-	def exist?(player) do
-		key = {Player, player |> Player.get_id}
+	def whereis(%{} = player), do: whereis(player |> Player.get_id)
+	def whereis(player_id) do
+		key = {Player, player_id}
 		case Registry.lookup(LocalRegistry, key) do
-			[{_pid, _}] -> true
-			[] -> false
+			[{pid, _}] -> pid
+			[] -> :undefined
+		end
+	end
+		
+	def exist?(player) do
+		case whereis(player) do
+			:undefined -> false
+			_ -> true
 		end
 	end
 end 
