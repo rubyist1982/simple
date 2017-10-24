@@ -49,9 +49,5 @@ defmodule TableServerTest do
 	end
 
 
-	def call_ok?(:ok), do: assert true
-	def call_ok?({:error, _any}), do: assert true
-	def call_ok?(_), do: assert false
-
 
 end

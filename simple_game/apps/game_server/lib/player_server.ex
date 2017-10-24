@@ -1,4 +1,5 @@
 defmodule PlayerServer do
+	use SimpleTableOp
 	use GenServer, restart: :temporary, start: {__MODULE__, :start_link, []}
 
 	def start_link(player) do
@@ -27,4 +28,18 @@ defmodule PlayerServer do
 			_ -> true
 		end
 	end
+
+
+	def handle_call({module, request}, from, player) do
+		case apply(module, :handle, [request, from, player]) do
+	    	{:error, _} = error ->
+	    		{:reply, error, player}
+	    	{result, new_player} ->
+	    		{:reply, result, new_player}
+	    end
+	end
+
+
+
+
 end 
