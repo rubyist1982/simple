@@ -1,5 +1,4 @@
 defmodule PlayerServer do
-	use SimpleTableOp
 	use GenServer, restart: :temporary, start: {__MODULE__, :start_link, []}
 
 	def start_link(player) do
